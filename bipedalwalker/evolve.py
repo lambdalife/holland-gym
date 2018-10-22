@@ -14,7 +14,7 @@ def fitness_function(genome):
     env = gym.make("BipedalWalker-v2")
 
     score = 0
-    n_trials = 5
+    n_trials = 3
 
     for i in range(n_trials):
         obs = env.reset()
@@ -28,26 +28,27 @@ def fitness_function(genome):
     return score / n_trials
 
 
+base_layer_params = {
+    "initial_distribution": lambda: random.random() * 200 - 100,
+    "crossover_function": library.get_point_crossover_function(n_crossover_points=2),
+    "mutation_function": library.get_gaussian_mutation_function(sigma=20),
+    "mutation_rate": 0.15,
+}
+
 genome_params = {
     "w0": {
+        **base_layer_params,
         "type": "[float]",
         "size": BipedalWalkerAgent.dimensions[1] * BipedalWalkerAgent.dimensions[0],
-        "initial_distribution": lambda: random.random() * 2 - 1,
-        "crossover_function": library.get_point_crossover_function(n_crossover_points=2),
-        "mutation_function": library.get_gaussian_mutation_function(sigma=0.5),
-        "mutation_rate": 0.1,
     },
     "w1": {
+        **base_layer_params,
         "type": "[float]",
         "size": BipedalWalkerAgent.dimensions[2] * BipedalWalkerAgent.dimensions[1],
-        "initial_distribution": lambda: random.random() * 2 - 1,
-        "crossover_function": library.get_point_crossover_function(n_crossover_points=2),
-        "mutation_function": library.get_gaussian_mutation_function(sigma=0.5),
-        "mutation_rate": 0.1,
     },
 }
 
-selection_strategy = {"pool": {"top": 10}}
+selection_strategy = {"pool": {"top": 15, "mid": 2, "random": 1}}
 
 evolver = Evolver(fitness_function, genome_params, selection_strategy)
 
@@ -61,7 +62,11 @@ storage_options = {
     }
 }
 
-final_pop = evolver.evolve(stop_conditions={"target_fitness": 300}, storage_options=storage_options)
+final_pop = evolver.evolve(
+    generation_params={"population_size": 500, "n_random": 50},
+    stop_conditions={"target_fitness": 300},
+    storage_options=storage_options
+)
 
 
 best_genome = final_pop[-1][1]
